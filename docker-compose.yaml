@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  db:
+    image: mysql:8.0
+    container_name: bank-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+
+  migrate:
+    image: migrate/migrate
+    container_name: bank-migrations
+    depends_on:
+      - db
+    entrypoint:
+      [
+        'migrate',
+        '-path',
+        '/migrations',
+        '-database',
+        'mysql://root:root@tcp(db:3306)/bank',
+        'up',
+      ]
+    volumes:
+      - ./migrations:/migrations
+
+  app:
+    build: .
+    container_name: bank-api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+
+volumes:
+  db_data:
