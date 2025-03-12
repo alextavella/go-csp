@@ -10,15 +10,6 @@ Esta é uma API simples de banco construída com **Fiber (Go)**, utilizando o mo
 - Mutex para controle de concorrência
 - Hey para testes de estresse
 
-## Estrutura do Projeto
-
-```
-bank-api/
-├── main.go
-├── go.mod
-└── go.sum
-```
-
 ## Instalação
 
 1. Clone o repositório:
