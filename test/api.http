@@ -1,0 +1,24 @@
+# Exemplos de Requisições para a API de Banco
+
+### Depósito
+
+POST http://localhost:3000/deposit
+Content-Type: application/json
+
+{
+"amount": 100
+}
+
+### Saque
+
+POST http://localhost:3000/withdraw
+Content-Type: application/json
+
+{
+"amount": 50
+}
+
+### Consulta de Saldo
+
+GET http://localhost:3000/balance
+
