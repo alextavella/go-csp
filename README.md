@@ -33,12 +33,31 @@ bank-api/
    go mod tidy
    ```
 
+## Rodando com Docker Compose
+
+1. Suba a aplicação com o Docker Compose:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+2. Verifique se a API está rodando:
+
+   ```bash
+   curl http://localhost:3000/balance
+   ```
+
+3. Instale as dependências:
+   ```bash
+   go mod tidy
+   ```
+
 ## Rodando a API
 
 Execute a aplicação com o comando:
 
 ```bash
-go run main.go
+go run cmd/api/main.go
 ```
 
 A API estará disponível em: `http://localhost:3000`
