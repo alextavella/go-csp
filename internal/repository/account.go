@@ -7,11 +7,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type Repository struct {
+type AccountRepository struct {
 	db *sql.DB
 }
 
-func NewRepository() (*Repository, error) {
+func NewAccountRepository() (*AccountRepository, error) {
 	dsn := "root:root@tcp(db:3306)/bank"
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -22,10 +22,10 @@ func NewRepository() (*Repository, error) {
 		return nil, fmt.Errorf("erro ao verificar conexão: %w", err)
 	}
 
-	return &Repository{db: db}, nil
+	return &AccountRepository{db: db}, nil
 }
 
-func (r *Repository) Deposit(amount int) error {
+func (r *AccountRepository) Deposit(amount int) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (r *Repository) Deposit(amount int) error {
 	return tx.Commit()
 }
 
-func (r *Repository) Withdraw(amount int) error {
+func (r *AccountRepository) Withdraw(amount int) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (r *Repository) Withdraw(amount int) error {
 	return tx.Commit()
 }
 
-func (r *Repository) GetBalance() (int, error) {
+func (r *AccountRepository) GetBalance() (int, error) {
 	var balance int
 	err := r.db.QueryRow("SELECT balance FROM accounts WHERE id = 1").Scan(&balance)
 	if err != nil {
