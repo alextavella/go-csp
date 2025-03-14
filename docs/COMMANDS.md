@@ -15,3 +15,10 @@ or
 
 migrate -path=migrations -database "mysql://root:root@tcp(localhost:3306)/bank" down
 ```
+
+### Redis
+
+```bash
+docker exec -it bank-redis redis-cli
+get balance
+```

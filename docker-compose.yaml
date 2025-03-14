@@ -12,6 +12,12 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  redis:
+    image: redis:alpine
+    container_name: bank-redis
+    ports:
+      - '6379:6379'
+
   migrate:
     image: migrate/migrate
     container_name: bank-migrations
@@ -36,6 +42,8 @@ services:
       - '3000:3000'
     depends_on:
       - db
+      - migrate
+      - redis
 
 volumes:
   db_data:
