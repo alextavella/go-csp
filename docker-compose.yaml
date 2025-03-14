@@ -10,7 +10,12 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - db_data:/var/lib/mysql
+      - .docker/mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -22,7 +27,8 @@ services:
     image: migrate/migrate
     container_name: bank-migrations
     depends_on:
-      - db
+      db:
+        condition: service_started
     entrypoint:
       [
         'migrate',
@@ -41,9 +47,9 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - db
-      - migrate
-      - redis
-
-volumes:
-  db_data:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_started
+      redis:
+        condition: service_started
