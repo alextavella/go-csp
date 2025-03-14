@@ -32,6 +32,13 @@ func (r *AccountRepository) Deposit(amount int) error {
 	}
 	defer tx.Rollback()
 
+	var balance int
+	// Lock explícito para garantir consistência
+	err = tx.QueryRow("SELECT balance FROM accounts WHERE id = 1 FOR UPDATE").Scan(&balance)
+	if err != nil {
+		return err
+	}
+
 	_, err = tx.Exec("UPDATE accounts SET balance = balance + ? WHERE id = 1", amount)
 	if err != nil {
 		return err
@@ -48,7 +55,8 @@ func (r *AccountRepository) Withdraw(amount int) error {
 	defer tx.Rollback()
 
 	var balance int
-	err = tx.QueryRow("SELECT balance FROM accounts WHERE id = 1").Scan(&balance)
+	// Lock explícito para garantir consistência
+	err = tx.QueryRow("SELECT balance FROM accounts WHERE id = 1 FOR UPDATE").Scan(&balance)
 	if err != nil {
 		return err
 	}
