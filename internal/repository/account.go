@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/alextavella/bank-api/internal/config"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -12,8 +13,7 @@ type AccountRepository struct {
 }
 
 func NewAccountRepository() (*AccountRepository, error) {
-	dsn := "root:root@tcp(db:3306)/bank"
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", config.DB_URI)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao conectar ao banco: %w", err)
 	}
