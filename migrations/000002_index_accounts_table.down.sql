@@ -1,1 +1,1 @@
-DROP INDEX idx_balance ON accounts (balance);
+DROP INDEX idx_balance ON accounts;
