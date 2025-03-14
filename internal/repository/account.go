@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/alextavella/bank-api/internal/config"
 	_ "github.com/go-sql-driver/mysql"
@@ -14,6 +15,10 @@ type AccountRepository struct {
 
 func NewAccountRepository() (*AccountRepository, error) {
 	db, err := sql.Open("mysql", config.DB_URI)
+	db.SetMaxOpenConns(50)                 // Máximo de conexões abertas
+	db.SetMaxIdleConns(5)                  // Máximo de conexões inativas
+	db.SetConnMaxLifetime(time.Minute * 5) // Tempo máximo de uma conexão
+
 	if err != nil {
 		return nil, fmt.Errorf("erro ao conectar ao banco: %w", err)
 	}
