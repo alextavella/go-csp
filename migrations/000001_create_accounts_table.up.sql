@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    balance INT NOT NULL DEFAULT 0
+);
+
+INSERT INTO accounts (balance) VALUES (1000) ON DUPLICATE KEY UPDATE balance=balance;
