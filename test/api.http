@@ -6,7 +6,8 @@ POST http://localhost:3000/deposit
 Content-Type: application/json
 
 {
-"amount": 100
+  "user_id": "alextavella",
+  "amount": 100
 }
 
 ### Saque
@@ -15,10 +16,11 @@ POST http://localhost:3000/withdraw
 Content-Type: application/json
 
 {
-"amount": 50
+  "user_id": "alextavella",
+  "amount": 50
 }
 
 ### Consulta de Saldo
 
-GET http://localhost:3000/balance
+GET http://localhost:3000/balance/alextavella
 

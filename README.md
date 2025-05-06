@@ -111,6 +111,7 @@ Retorna o saldo atual da conta.
 
 ```json
 {
+  "user_id": "alextavella",
   "balance": 1000
 }
 ```

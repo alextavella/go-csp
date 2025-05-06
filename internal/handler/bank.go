@@ -22,7 +22,7 @@ func (h *BankHandler) Deposit(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	if err := h.repo.Deposit(c.Context(), tx.Amount); err != nil {
+	if err := h.repo.Deposit(c.Context(), tx); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
@@ -35,7 +35,7 @@ func (h *BankHandler) Withdraw(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	if err := h.repo.Withdraw(c.Context(), tx.Amount); err != nil {
+	if err := h.repo.Withdraw(c.Context(), tx); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
@@ -43,7 +43,7 @@ func (h *BankHandler) Withdraw(c *fiber.Ctx) error {
 }
 
 func (h *BankHandler) Balance(c *fiber.Ctx) error {
-	balance, err := h.repo.GetBalance(c.Context())
+	balance, err := h.repo.GetBalance(c.Context(), c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

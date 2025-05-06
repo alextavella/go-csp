@@ -3,6 +3,7 @@ module github.com/alextavella/bank-api
 go 1.24.0
 
 require (
+	github.com/bsm/redislock v0.9.4
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/redis/go-redis/v9 v9.7.1

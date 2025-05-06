@@ -1,5 +1,6 @@
 package domain
 
 type Transaction struct {
-	Amount int `json:"amount"`
+	UserID string  `json:"user_id"`
+	Amount float64 `json:"amount"`
 }

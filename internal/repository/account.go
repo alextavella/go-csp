@@ -7,13 +7,16 @@ import (
 	"time"
 
 	"github.com/alextavella/bank-api/internal/config"
+	"github.com/alextavella/bank-api/internal/domain"
+	"github.com/bsm/redislock"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
 )
 
 type AccountRepository struct {
-	db    *sql.DB
-	cache *redis.Client
+	db     *sql.DB
+	cache  *redis.Client
+	locker *redislock.Client
 }
 
 const (
@@ -34,31 +37,55 @@ func NewAccountRepository() (*AccountRepository, error) {
 	db.SetConnMaxLifetime(time.Minute * 5) // Tempo máximo de uma conexão
 
 	// Conexão com o Redis
-	rdb := redis.NewClient(&redis.Options{
+	redisClient := redis.NewClient(&redis.Options{
 		Addr:     config.CACHE_URI,
 		Password: "", // Sem senha
 		DB:       0,  // Banco padrão
 	})
 
-	return &AccountRepository{db: db, cache: rdb}, nil
+	locker := redislock.New(redisClient)
+
+	return &AccountRepository{db: db, cache: redisClient, locker: locker}, nil
 }
 
-func (r *AccountRepository) Deposit(ctx context.Context, amount int) error {
+func (r *AccountRepository) Deposit(ctx context.Context, transaction domain.Transaction) error {
+	amount := transaction.Amount
+	userID := transaction.UserID
+
+	lockKey := "lock:user:" + userID
+	lock, err := r.locker.Obtain(ctx, lockKey, 5*time.Second, nil)
+	if err == redislock.ErrNotObtained {
+		return fmt.Errorf("outra operação em andamento para este usuário")
+	} else if err != nil {
+		return fmt.Errorf("erro ao tentar obter lock")
+	}
+	defer lock.Release(ctx)
+
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	var balance int
+	var balance float64
 	// Lock explícito para garantir consistência
-	err = tx.QueryRow("SELECT balance FROM accounts WHERE id = 1 FOR UPDATE").Scan(&balance)
+	err = tx.QueryRow("SELECT balance FROM accounts WHERE user_id = ? FOR UPDATE", userID).Scan(&balance)
 	if err != nil {
-		return err
+		if err == sql.ErrNoRows {
+			if amount < 0 {
+				return fmt.Errorf("saldo insuficiente")
+			}
+			_, err = tx.Exec("INSERT INTO accounts (user_id, balance) VALUES (?, ?)", userID, amount)
+			if err != nil {
+				return fmt.Errorf("erro ao persistir operação")
+			}
+		} else {
+			return err
+		}
 	}
 
 	newBalance := balance + amount
-	_, err = tx.Exec("UPDATE accounts SET balance = ? WHERE id = 1", newBalance)
+	_, err = tx.Exec("UPDATE accounts SET balance = ? WHERE user_id = ?", newBalance, userID)
 	if err != nil {
 		return err
 	}
@@ -69,18 +96,30 @@ func (r *AccountRepository) Deposit(ctx context.Context, amount int) error {
 	return tx.Commit()
 }
 
-func (r *AccountRepository) Withdraw(ctx context.Context, amount int) error {
+func (r *AccountRepository) Withdraw(ctx context.Context, transaction domain.Transaction) error {
+	amount := transaction.Amount
+	userID := transaction.UserID
+
+	lockKey := "lock:user:" + userID
+	lock, err := r.locker.Obtain(ctx, lockKey, 5*time.Second, nil)
+	if err == redislock.ErrNotObtained {
+		return fmt.Errorf("outra operação em andamento para este usuário")
+	} else if err != nil {
+		return fmt.Errorf("erro ao tentar obter lock")
+	}
+	defer lock.Release(ctx)
+
 	tx, err := r.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao iniciar transação")
 	}
 	defer tx.Rollback()
 
-	var balance int
+	var balance float64
 	// Lock explícito para garantir consistência
-	err = tx.QueryRow("SELECT balance FROM accounts WHERE id = 1 FOR UPDATE").Scan(&balance)
+	err = tx.QueryRow("SELECT balance FROM accounts WHERE user_id = ? FOR UPDATE", userID).Scan(&balance)
 	if err != nil {
-		return err
+		return fmt.Errorf("saldo insuficiente")
 	}
 
 	if balance < amount {
@@ -88,9 +127,9 @@ func (r *AccountRepository) Withdraw(ctx context.Context, amount int) error {
 	}
 
 	newBalance := balance - amount
-	_, err = tx.Exec("UPDATE accounts SET balance = ? WHERE id = 1", newBalance)
+	_, err = tx.Exec("UPDATE accounts SET balance = ? WHERE user_id = ?", newBalance, userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao persistir operação")
 	}
 
 	// Atualiza o saldo no cache
@@ -99,17 +138,17 @@ func (r *AccountRepository) Withdraw(ctx context.Context, amount int) error {
 	return tx.Commit()
 }
 
-func (r *AccountRepository) GetBalance(ctx context.Context) (int, error) {
-	var balance int
+func (r *AccountRepository) GetBalance(ctx context.Context, userID string) (float64, error) {
+	var balance float64
 
 	// Tenta buscar no cache
-	balance, err := r.cache.Get(ctx, "balance").Int()
+	balance, err := r.cache.Get(ctx, "balance").Float64()
 	if err == nil {
 		return balance, nil
 	}
 
 	// Se não estiver no cache, busca no banco
-	err = r.db.QueryRow("SELECT balance FROM accounts WHERE id = 1").Scan(&balance)
+	err = r.db.QueryRow("SELECT balance FROM accounts WHERE user_id = ?", userID).Scan(&balance)
 	if err != nil {
 		return 0, err
 	}

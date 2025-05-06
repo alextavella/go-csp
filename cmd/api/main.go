@@ -19,7 +19,7 @@ func main() {
 	app := fiber.New()
 	app.Post("/deposit", bankHandler.Deposit)
 	app.Post("/withdraw", bankHandler.Withdraw)
-	app.Get("/balance", bankHandler.Balance)
+	app.Get("/balance/:id", bankHandler.Balance)
 
 	log.Fatal(app.Listen(":3000"))
 }

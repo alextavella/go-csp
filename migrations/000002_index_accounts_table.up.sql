@@ -1,1 +1,1 @@
-CREATE INDEX idx_balance ON accounts (balance);
+CREATE INDEX idx_balance ON accounts (user_id);
